@@ -35,6 +35,8 @@ const fs=require('node:fs');
   assert.equal(await page.locator('.eq .katex-display').count(),await page.locator('.eq').count(),'Every display equation must survive HTML parsing and typeset.');
   assert.ok((await page.locator('#math').innerText()).includes('For 0<b<H'));
   assert.ok(await page.locator('.katex').count()>40);
+  assert.ok(await page.locator('.visual-aid').count()>=24);
+  for(const key of ['math','intuition','effects','family','unknown','next'])assert.ok(await page.locator(`#${key} .visual-aid`).count()>0,`Missing visual aids: ${key}`);
   assert.equal(await page.locator('#ideal-current').innerText(),'0.300 H');
   assert.equal(await page.locator('#ideal-minimum').innerText(),'0.250 H');
   assert.equal(await page.locator('#ideal-critical').innerText(),'25%');
@@ -79,11 +81,31 @@ const fs=require('node:fs');
   await page.goto(base+'/#symmetry');
   assert.ok(await page.locator('#intuition').isVisible());
   assert.ok(await page.locator('#symmetry').isVisible());
+  await page.locator('#reflection-fill').fill('50');
+  assert.equal(await page.locator('#reflection-water').innerText(),'0.250 H');
+  assert.equal(await page.locator('#reflection-cg').innerText(),'0.300 H');
+  await page.locator('#reflection-fill').fill('0');
+  assert.equal(await page.locator('#reflection-water').innerText(),'Undefined (no water)');
+  assert.equal(await page.locator('#reflection-cg').innerText(),'0.500 H');
+  await page.locator('#reflection-fill').fill('100');
+  assert.equal(await page.locator('#reflection-water').innerText(),'0.500 H');
+  assert.equal(await page.locator('#reflection-cg').innerText(),'0.500 H');
   await page.locator('#symmetry-proof summary').click();
   assert.equal(await page.locator('#symmetry-proof').getAttribute('open'),'');
   assert.ok(await page.locator('#symmetry-proof .katex-display').count()>=7);
   assert.equal(await page.locator('#symmetry-proof .katex-display').count(),await page.locator('#symmetry-proof .eq').count());
   assert.equal(await page.locator('.katex-error').count(),0);
+  for(const [key,title,file] of [
+    ['intuition','See the two different reflection planes','reflection-pairs'],
+    ['effects','A fixed water amount, two orientations','tilt'],
+    ['family','Temperature: the incoming value must cross the current average','analogue'],
+    ['next','Keep the prediction and measurement routes independent','workflow']
+  ]){
+    await page.locator(`#tab-${key}`).click();
+    const fig=page.locator('figure.visual-aid').filter({hasText:title});
+    assert.equal(await fig.count(),1);
+    await fig.screenshot({path:path.join(process.env.QA_DIR||'/tmp',`bottle-${file}.png`)});
+  }
   await page.goto(base+'/#math');
   await page.locator('#tab-math').focus();await page.keyboard.press('ArrowRight');
   assert.equal(await page.locator('#tab-intuition').getAttribute('aria-selected'),'true');
@@ -99,6 +121,11 @@ const fs=require('node:fs');
     const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
     assert.equal(overflow,false,`page overflow on mobile: ${key}`);
   }
+  await page.goto(base+'/#reflection-explorer');
+  await page.locator('#reflection-fill').fill('25');
+  assert.equal(await page.locator('#reflection-cg').innerText(),'0.250 H');
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
+  await page.locator('#reflection-explorer').screenshot({path:path.join(process.env.QA_DIR||'/tmp','bottle-reflection-mobile.png')});
   await page.locator('#tab-math').click();
   await page.screenshot({path:process.env.QA_DIR?path.join(process.env.QA_DIR,'mobile.png'):'/tmp/bottle-mobile.png',fullPage:false});
   assert.deepEqual(errors,[]);assert.deepEqual(failures,[]);assert.deepEqual(external,[]);

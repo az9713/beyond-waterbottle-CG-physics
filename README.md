@@ -29,6 +29,8 @@ For a **single downloadable file**, open `standalone.html`. It embeds all script
 
 Controls change fill, bottle/full-water mass ratio, empty-bottle CG, and (in the real-world tab) area slope. Play empties at constant mass rate; switching chapters pauses it. CSV exports 1,001 computed states. The family plot can toggle four independently evaluated dimensional analogues. Tabs support arrow keys, Home/End, deep links, and direct source-reference navigation. Print includes all chapters and expands the conceptual notes.
 
+All six chapters include 26 visual aids beside extended explanations: paired reflection elements and distinct symmetry planes; exact component centroids; removed layers; disappearing equivalent ballast; equal complementary-fill moments; timing and mass-ratio curves; shape and tilt; retained high water; capillary scales; slosh; fluid boundary conditions; density sensitivity; four dimensional analogues; system boundaries; singular limits; reference frames; stability; and an experimental workflow. An additional symmetry slider moves the water plane while showing all three centroids. Captions distinguish computed curves from schematics, state units and assumptions, and identify magnified or nonphysical display offsets. These figures are code-native SVG, not generated illustrative images.
+
 ## The central result
 
 For shell mass `M`, shell CG height `b`, water density `rho`, cylindrical cross-section `A`, and remaining depth `h`:
@@ -49,6 +51,7 @@ The checked-in `index.html` is ready to serve. Its long-form content is maintain
 ```powershell
 python build_content.py
 python scripts/build_standalone.py
+python visual_aids.py
 node tests/physics.test.cjs
 ```
 
@@ -93,6 +96,7 @@ This repository contains the educational artifact, not the private conversation 
 | `index.html` | Ready-to-read six-tab app |
 | `standalone.html` | Self-contained offline edition |
 | `build_content.py` | Editable chapter content and static HTML generator |
+| `visual_aids.py` | Deterministic scientific SVGs, captions, and geometry checks |
 | `physics.js` | Pure dimensionless physical models |
 | `app.js` | Interactive SVG plots, controls, tabs, CSV and print behavior |
 | `style.css` | Responsive dark design and print styling |

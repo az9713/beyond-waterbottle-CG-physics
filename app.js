@@ -106,6 +106,30 @@ function setupSimulator(prefix, advanced = false) {
 }
 setupSimulator('ideal');setupSimulator('real',true);
 
+function reflection(){
+  const f=Number($('reflection-fill').value)/100,z=P.cg(f),svg=$('reflection-svg');
+  const yy=u=>218-185*u;
+  svg.replaceChildren();
+  svg.append(node('rect',{x:105,y:33,width:90,height:185,fill:'none',stroke:'#e2e8f0','stroke-width':1.6}));
+  if(f>0){
+    svg.append(node('rect',{x:106,y:yy(f),width:88,height:185*f,fill:'#124966'}));
+    line(svg,105,yy(f),195,yy(f),{stroke:'#38bdf8','stroke-width':2});
+    line(svg,65,yy(f/2),245,yy(f/2),{stroke:'#f472b6','stroke-dasharray':'4 4','stroke-width':2});
+    svg.append(node('circle',{cx:150,cy:yy(f/2),r:8,fill:'#0b1220',stroke:'#38bdf8','stroke-width':2}));
+  }
+  line(svg,25,yy(.5),280,yy(.5),{stroke:'#e2e8f0','stroke-dasharray':'5 4'});
+  svg.append(node('rect',{x:140,y:yy(.5)-10,width:20,height:20,fill:'none',stroke:'#e2e8f0','stroke-width':2}));
+  const y=yy(z);
+  svg.append(node('path',{d:`M150,${y-5}l5,5l-5,5l-5,-5Z`,fill:'#fbbf24'}));
+  label(svg,15,yy(.5)-13,f===1?'Both planes coincide':'Bottle midpoint H/2',{'font-size':12});
+  if(f>0&&f<1)label(svg,200,yy(f/2)+16,'Water h/2',{'font-size':12});
+  label(svg,95,31,'H',{'font-size':12,'text-anchor':'end'});label(svg,95,222,'0',{'font-size':12,'text-anchor':'end'});
+  $('reflection-value').textContent=(100*f).toFixed(0)+'%';
+  $('reflection-water').textContent=f>0?(f/2).toFixed(3)+' H':'Undefined (no water)';
+  $('reflection-cg').textContent=z.toFixed(3)+' H';
+}
+$('reflection-fill').addEventListener('input',reflection);reflection();
+
 function family(){
   const r=10**Number($('family-r').value),svg=$('family-plot'),tr=frame(svg,'Normalized added amount f (drinking runs right → left)');
   $('family-r-value').textContent=r.toFixed(3);

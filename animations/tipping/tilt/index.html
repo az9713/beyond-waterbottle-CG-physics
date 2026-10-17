@@ -79,7 +79,7 @@ function panel(f,theta,mode='rigid',r=.125,q=0.09711541605262927){
   const vessel=polygon([[-q,0],[q,0],[q,1],[-q,1]]);
   const water=S.clipCentral(f,theta,a.level,q,mode);
   const cx=px+scale*a.x,cy=py-scale*a.z;
-  const over=a.x>1e-5,neutral=Math.abs(a.x)<.002;
+  const over=a.x>1e-7,neutral=Math.abs(a.x)<1e-7;
   let out=`<svg class="science-svg stability-view" viewBox="0 0 ${w} ${h}" role="img" aria-label="${mode==='rigid'?'Immobilized payload':'Settled liquid'} at ${(theta*180/Math.PI).toFixed(1)} degrees"><title>Computed ${mode} geometry, ${Math.round(f*100)}% full</title>`;
   out+=line(25,py+1,405,py+1,colors.muted)+line(px,35,px,py+10,colors.muted,'4 6');
   if(f>0)out+=`<polygon points="${polygon(water)}" fill="#124966" stroke="${colors.cyan}" stroke-width="2"/>`;

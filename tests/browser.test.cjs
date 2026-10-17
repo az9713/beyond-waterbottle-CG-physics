@@ -130,6 +130,9 @@ const fs=require('node:fs');
   assert.ok((await page.locator('#stability-readout').innerText()).includes('20.72°'));
   await page.locator('#stability-critical').click();
   assert.ok((await page.locator('#stability-angle-value').innerText()).includes('20.72'));
+  await page.locator('#stability-angle').fill('20.98');
+  const heldLabels=await page.locator('#stability-views').innerText();
+  assert.ok(heldLabels.includes('Gravity restores upright')&&heldLabels.includes('Gravity drives further tipping'),'The held comparison angle must visibly distinguish the torque directions');
   for(const [id,value] of [['stability-fill','0'],['stability-fill','100'],['stability-r','0.3'],['stability-radius','0.3'],['stability-angle','70']]){
     await page.locator('#'+id).fill(value);
     assert.equal((await page.locator('#stability-views').innerHTML()).includes('NaN'),false);

@@ -173,8 +173,18 @@ tabs.forEach((tab,i)=>{
   tab.addEventListener('click',()=>{const key=tab.getAttribute('aria-controls');history.replaceState(null,'','#'+key);activate(key);});
   tab.addEventListener('keydown',e=>{let idx;if(e.key==='ArrowRight')idx=(i+1)%tabs.length;if(e.key==='ArrowLeft')idx=(i+tabs.length-1)%tabs.length;if(e.key==='Home')idx=0;if(e.key==='End')idx=tabs.length-1;if(idx!==undefined){e.preventDefault();tabs[idx].click();tabs[idx].focus();}});
 });
+function focusContent(){
+  controllers.forEach(c=>c.pause());
+  $('main').focus({preventScroll:true});
+  $('main').scrollIntoView({block:'start'});
+}
+document.querySelector('.skip').addEventListener('click',event=>{
+  event.preventDefault();
+  focusContent();
+});
 function fromHash(){
   const key=location.hash.slice(1);
+  if(key==='main'){focusContent();return;}
   const target=$(key);
   if(target && !target.matches('[role=tabpanel]')){
     const panel=target.closest('[role=tabpanel]');

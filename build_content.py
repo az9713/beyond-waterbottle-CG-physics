@@ -1,10 +1,14 @@
 """Build the static HTML from explicit, editable scientific content. No packages."""
 from pathlib import Path
 from html import escape
+import re
 
 ROOT=Path(__file__).parent
-def eq(s): return '<div class="eq">\\['+s+'\\]</div>'
-def p(s): return '<p>'+s+'</p>'
+def eq(s): return '<div class="eq">\\['+escape(s)+'\\]</div>'
+def p(s):
+    # Preserve intentional markup, but inequalities such as 0<b<H are text.
+    s=re.sub(r'<(?!/?[A-Za-z][A-Za-z0-9-]*(?:\s[^<>]*|/?)>)','&lt;',s)
+    return '<p>'+s+'</p>'
 def h(s): return '<h3>'+s+'</h3>'
 def table(head,rows):
     return '<div class="tablewrap"><table><thead><tr>'+''.join('<th>'+c+'</th>' for c in head)+'</tr></thead><tbody>'+''.join('<tr>'+''.join('<td>'+c+'</td>' for c in row)+'</tr>' for row in rows)+'</tbody></table></div>'

@@ -32,6 +32,8 @@ const fs=require('node:fs');
   await page.evaluate(()=>document.fonts.ready);
   assert.equal(await page.locator('[role=tab]').count(),6);
   assert.equal(await page.locator('.katex-error').count(),0);
+  assert.equal(await page.locator('.eq .katex-display').count(),await page.locator('.eq').count(),'Every display equation must survive HTML parsing and typeset.');
+  assert.ok((await page.locator('#math').innerText()).includes('For 0<b<H'));
   assert.ok(await page.locator('.katex').count()>40);
   assert.equal(await page.locator('#ideal-current').innerText(),'0.300 H');
   assert.equal(await page.locator('#ideal-minimum').innerText(),'0.250 H');

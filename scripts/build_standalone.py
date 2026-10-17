@@ -16,7 +16,7 @@ for filename in ['vendor/katex/katex.min.css','style.css']:
     page=page.replace(f'<link rel="stylesheet" href="{filename}">','<style>'+css+'</style>')
 for filename in ['vendor/katex/katex.min.js','vendor/katex/contrib/auto-render.min.js','physics.js','app.js']:
     script=(root/filename).read_text().replace('</script','<\\/script')
-    page=page.replace(f'<script defer src="{filename}"></script>','')
+    page=re.sub(r'<script defer src="'+re.escape(filename)+r'(?:\?[^"<>]*)?"></script>','',page)
     page=page.replace('</body>','<script>'+script+'</script></body>')
 icon=base64.b64encode((root/'assets/favicon.svg').read_bytes()).decode()
 page=page.replace('href="assets/favicon.svg"','href="data:image/svg+xml;base64,'+icon+'"')

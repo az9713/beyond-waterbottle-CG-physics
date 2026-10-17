@@ -148,8 +148,12 @@ tabs.forEach((tab,i)=>{
 });
 function fromHash(){
   const key=location.hash.slice(1);
-  if(key.startsWith('ref-')){activate('next');requestAnimationFrame(()=>$(key)?.scrollIntoView({block:'center'}));}
-  else activate(key||'math');
+  const target=$(key);
+  if(target && !target.matches('[role=tabpanel]')){
+    const panel=target.closest('[role=tabpanel]');
+    activate(panel?.id||'math');
+    requestAnimationFrame(()=>target.scrollIntoView({block:'start'}));
+  }else activate(key||'math');
 }
 window.addEventListener('hashchange',fromHash);fromHash();
 let printState;

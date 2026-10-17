@@ -9,7 +9,7 @@ The URL becomes live after the repository is pushed and GitHub Pages finishes bu
 ## Chapters
 
 1. **Full mathematics** — continuous mass moments, endpoints, derivative identity, uniqueness, convexity, dimensionless limits, and a separate drinking-rate model.
-2. **Intuition** — endpoint argument, vanishing ballast, the half-full test, and a marginal-layer interpretation.
+2. **Intuition** — endpoint argument, vanishing ballast, the half-full test, a marginal-layer interpretation, and a symmetry analysis: axial rotations, horizontal reflection, complementary-fill moment symmetry, and why the normalized CG curve is not symmetric. Direct link: [Symmetry argument](https://az9713.github.io/beyond-waterbottle-CG-physics/#symmetry).
 3. **Real-world effects** — nonuniform cross-section, air, retained films and droplets, moving shell mass, fixed and changing tilt, capillarity, a reduced slosh model, and the full fluid equations and boundary conditions.
 4. **Shared framework** — thermal mixing, capacitor charge sharing, inelastic momentum capture, and solute mixing; exact dimensionless collapse under matching input protocols.
 5. **Unknown unknowns** — singular limits, reference frames, system boundaries, stability, inverse identification, noisy measurements, and the limits of analogies.

@@ -32,4 +32,21 @@ for(const [X,scale] of [[800,40],[8,12],[16,6],[2,.1]])for(const r of [.01,.125,
 }
 // The zero-shell limit cannot be evaluated by pretending the empty system has mass.
 assert.ok(Number.isNaN(P.cg(0,0)));
+// Complementary fills preserve centered first moments, not normalized CGs.
+for(const r of [.003,.125,1,10])for(let i=1;i<50;i++){
+  const f=i/100,g=1-f;
+  const q=P.moment(f)-P.volume(f)/2;
+  near(q,P.moment(g)-P.volume(g)/2);
+  near(P.cg(f,r)-P.cg(g,r),-f*(1-f)*(1-2*f)/(2*(r+f)*(r+1-f)));
+  assert.ok(P.cg(f,r)<P.cg(g,r));
+  assert.ok(P.minimum(r).f<.5);
+  const eps=Math.min(.1,1/(8*(r+.5)));
+  assert.ok(P.cg(.5-eps,r)<P.cg(.5,r));
+}
+// The centered moment identity survives an off-center shell; CG ordering need not.
+for(const b of [.1,.8,.95])for(const f of [.1,.3,.6]){
+  const q=u=>(.125+P.volume(u))*(P.cg(u,.125,b)-.5);
+  near(q(f),q(1-f));
+}
+assert.ok(P.minimum(10,.95).f>.5);
 console.log('PASS: endpoints, turning points, boundary cases, derivative identity, quadrature, and dimensional collapse.');

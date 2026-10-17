@@ -57,8 +57,9 @@ function bottle(svg,u,z,b,shape) {
 }
 const controllers=[];
 function setupSimulator(prefix, advanced = false) {
-  let playing=false, previous=0, raf;
+  let playing=false, previous=null, playbackFill=0, raf;
   const fill=$(`${prefix}-fill`),mass=$(`${prefix}-mass`),base=$(`${prefix}-base`);
+  const speed=$(`${prefix}-speed`);
   const values=()=>({f:Number(fill.value)/100,r:10**Number(mass.value),b:Number(base.value),shape:advanced?Number($('shape').value):0});
   function pause(){playing=false;cancelAnimationFrame(raf);$(`${prefix}-play`).textContent='Play';}
   function render(){
@@ -84,17 +85,19 @@ function setupSimulator(prefix, advanced = false) {
   for(const control of [fill,mass,base,...(advanced?[$('shape')]:[])])control.addEventListener('input',()=>{pause();render();});
   function step(now){
     if(!playing)return;
-    if(!previous)previous=now;
-    const f=Math.max(0,Number(fill.value)-(now-previous)/200);previous=now;
-    fill.value=String(f);render();
-    if(f<=0)pause();else raf=requestAnimationFrame(step);
+    if(previous===null)previous=now;
+    // Keep fractional progress outside the range input: its 0.1 step rounds
+    // each assignment and can otherwise stall playback on fast displays.
+    playbackFill=Math.max(0,playbackFill+(previous-now)*Number(speed.value)/200);previous=now;
+    fill.value=String(playbackFill);render();
+    if(playbackFill<=0)pause();else raf=requestAnimationFrame(step);
   }
   $(`${prefix}-play`).addEventListener('click',()=>{
     if(playing){pause();return;}
     if(Number(fill.value)<=0)fill.value='100';
-    playing=true;previous=0;$(`${prefix}-play`).textContent='Pause';raf=requestAnimationFrame(step);
+    playing=true;previous=performance.now();playbackFill=Number(fill.value);$(`${prefix}-play`).textContent='Pause';raf=requestAnimationFrame(step);
   });
-  $(`${prefix}-reset`).addEventListener('click',()=>{pause();fill.value='50';mass.value=String(Math.log10(.125));base.value='.5';if(advanced)$('shape').value='0';render();});
+  $(`${prefix}-reset`).addEventListener('click',()=>{pause();fill.value='50';mass.value=String(Math.log10(.125));base.value='.5';speed.value='2';if(advanced)$('shape').value='0';render();});
   $(`${prefix}-csv`).addEventListener('click',()=>{
     const {r,b,shape}=values();
     let data='fraction_consumed,water_fraction,depth_over_H,cg_over_H,mass_ratio,empty_cg_over_H,area_slope\n';

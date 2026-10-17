@@ -1,0 +1,7 @@
+WEBVTT
+
+00:00.000 --> 00:05.000
+Computed immobilized-water model. Fill increases from empty to full. Each bar is normalized by its own maximum; values retain their physical units.
+
+00:05.000 --> 00:10.000
+Tilt tolerance peaks at 25 percent full. The initial-angular-speed threshold peaks near 30.7 percent. Energy and fixed-height impulse thresholds peak at full. Free-water impact dynamics are not solved.

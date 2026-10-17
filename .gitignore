@@ -3,3 +3,7 @@ __pycache__/
 test-results/
 playwright-report/
 .DS_Store
+# HyperFrames render scratch directories (only final assets are published)
+assets/work-*/
+assets/.*.hf-transaction-*/
+animations/**/.hyperframes*/

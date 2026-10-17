@@ -1,0 +1,11 @@
+/*!
+ * GSAP 3.14.2
+ * https://gsap.com
+ * 
+ * @license Copyright 2025, GreenSock. All rights reserved.
+ * Subject to the terms at https://gsap.com/standard-license.
+ * @author: Jack Doyle, jack@greensock.com
+ */
+
+License terms: https://gsap.com/community/standard-license/
+This notice accompanies the unmodified GSAP 3.14.2 browser distribution.

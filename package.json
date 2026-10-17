@@ -4,7 +4,7 @@
   "private": true,
   "description": "Static interactive center-of-gravity physics explorer",
   "scripts": {
-    "test": "node tests/physics.test.cjs",
+    "test": "node tests/physics.test.cjs && node tests/stability.test.cjs",
     "test:browser": "node tests/browser.test.cjs"
   },
   "devDependencies": {"playwright": "1.62.1"}

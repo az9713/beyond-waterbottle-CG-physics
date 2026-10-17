@@ -8,7 +8,7 @@ const fs=require('node:fs');
   let base=process.env.TEST_URL;
   if(!base){
     const http=require('node:http'),root=path.resolve(__dirname,'..');
-    const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.svg':'image/svg+xml','.png':'image/png'};
+    const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.mp4':'video/mp4','.vtt':'text/vtt'};
     server=http.createServer((req,res)=>{
       let name=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
       if(name.endsWith('/'))name+='index.html';
@@ -26,22 +26,22 @@ const fs=require('node:fs');
   const context=await browser.newContext({viewport:{width:Number(process.env.TEST_WIDTH)||1440,height:Number(process.env.TEST_HEIGHT)||1000},acceptDownloads:true});
   const page=await context.newPage(),errors=[],failures=[],external=[];
   page.on('pageerror',e=>errors.push(e.message));
-  page.on('requestfailed',r=>failures.push(r.url()));
+  page.on('requestfailed',r=>{if(r.resourceType()==='media'&&r.failure()?.errorText==='net::ERR_ABORTED')return;failures.push({url:r.url(),error:r.failure()?.errorText,type:r.resourceType()});});
   page.on('request',r=>{if(!r.url().startsWith(base)&&!r.url().startsWith('blob:')&&!r.url().startsWith('data:'))external.push(r.url());});
   await page.goto(base,{waitUntil:'networkidle'});
   await page.evaluate(()=>document.fonts.ready);
-  assert.equal(await page.locator('[role=tab]').count(),6);
+  assert.equal(await page.locator('[role=tab]').count(),8);
   assert.equal(await page.locator('.katex-error').count(),0);
   assert.equal(await page.locator('.eq .katex-display').count(),await page.locator('.eq').count(),'Every display equation must survive HTML parsing and typeset.');
   assert.ok((await page.locator('#math').innerText()).includes('For 0<b<H'));
   assert.ok(await page.locator('.katex').count()>40);
   assert.ok(await page.locator('.visual-aid').count()>=24);
-  for(const key of ['math','intuition','effects','family','unknown','next'])assert.ok(await page.locator(`#${key} .visual-aid`).count()>0,`Missing visual aids: ${key}`);
+  for(const key of ['math','intuition','effects','family','unknown','next','questions','stability'])assert.ok(await page.locator(`#${key} .visual-aid`).count()>0,`Missing visual aids: ${key}`);
   assert.equal(await page.locator('#ideal-current').innerText(),'0.300 H');
   assert.equal(await page.locator('#ideal-minimum').innerText(),'0.250 H');
   assert.equal(await page.locator('#ideal-critical').innerText(),'25%');
   await page.screenshot({path:process.env.QA_DIR?path.join(process.env.QA_DIR,'desktop.png'):'/tmp/bottle-desktop.png'});
-  for(const key of ['intuition','effects','family','unknown','next','math']){
+  for(const key of ['intuition','effects','family','unknown','next','questions','stability','math']){
     await page.locator(`#tab-${key}`).click();
     assert.ok(await page.locator(`#${key}`).isVisible());
     assert.equal(await page.locator('[role=tabpanel]:visible').count(),1);
@@ -119,17 +119,39 @@ const fs=require('node:fs');
   await page.locator('#tab-math').focus();await page.keyboard.press('ArrowRight');
   assert.equal(await page.locator('#tab-intuition').getAttribute('aria-selected'),'true');
   await page.keyboard.press('End');
-  assert.equal(await page.locator('#tab-next').getAttribute('aria-selected'),'true');
+  assert.equal(await page.locator('#tab-stability').getAttribute('aria-selected'),'true');
+  await page.locator('#tab-next').click();
   await page.locator('.skip').focus();
   await page.keyboard.press('Enter');
   assert.equal(await page.locator('#tab-next').getAttribute('aria-selected'),'true','Skip must preserve the current chapter');
   assert.equal(await page.evaluate(()=>document.activeElement.id),'main','Skip must focus the content');
+  await page.locator('#tab-stability').click();
+  assert.ok((await page.locator('#stability-readout').innerText()).includes('21.23°'));
+  assert.ok((await page.locator('#stability-readout').innerText()).includes('20.72°'));
+  await page.locator('#stability-critical').click();
+  assert.ok((await page.locator('#stability-angle-value').innerText()).includes('20.72'));
+  for(const [id,value] of [['stability-fill','0'],['stability-fill','100'],['stability-r','0.3'],['stability-radius','0.3'],['stability-angle','70']]){
+    await page.locator('#'+id).fill(value);
+    assert.equal((await page.locator('#stability-views').innerHTML()).includes('NaN'),false);
+  }
+  await page.locator('#stability-reset').click();
+  assert.equal(await page.locator('#stability-fill').inputValue(),'25');
+  await page.locator('#stability-play').click();
+  await page.waitForFunction(()=>Number(document.getElementById('stability-angle').value)>0.2);
+  await page.locator('#tab-questions').click();
+  assert.equal(await page.locator('#stability-play').innerText(),'Animate tilt');
+  await page.locator('#tab-stability').click();
+  for(const video of await page.locator('#stability video').all()){
+    await video.evaluate(v=>new Promise((resolve,reject)=>{if(v.readyState>=1)return resolve();v.addEventListener('loadedmetadata',resolve,{once:true});v.addEventListener('error',()=>reject(new Error('Video failed to load')),{once:true});v.load();}));
+    assert.ok(Math.abs(await video.evaluate(v=>v.duration)-10)<.1);
+    await video.evaluate(v=>{v.currentTime=5;});
+  }
   await page.emulateMedia({media:'print'});
-  assert.equal(await page.locator('[role=tabpanel]:visible').count(),6);
+  assert.equal(await page.locator('[role=tabpanel]:visible').count(),8);
   await page.emulateMedia({media:'screen'});
   await page.setViewportSize({width:390,height:844});
   await page.goto(base+'/#math');
-  for(const key of ['math','intuition','effects','family','unknown','next']){
+  for(const key of ['math','intuition','effects','family','unknown','next','questions','stability']){
     await page.locator(`#tab-${key}`).click();
     const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);
     assert.equal(overflow,false,`page overflow on mobile: ${key}`);
@@ -142,7 +164,7 @@ const fs=require('node:fs');
   await page.locator('#tab-math').click();
   await page.screenshot({path:process.env.QA_DIR?path.join(process.env.QA_DIR,'mobile.png'):'/tmp/bottle-mobile.png',fullPage:false});
   assert.deepEqual(errors,[]);assert.deepEqual(failures,[]);assert.deepEqual(external,[]);
-  console.log('PASS: six tabs, equations, sliders, animation, CSV, shape, dimensional curves, references, keyboard tabs, print, mobile layout, and zero external requests.');
+  console.log('PASS: eight tabs, equations, sliders, animation, CSV, shape, dimensional curves, references, keyboard tabs, print, mobile layout, and zero external requests.');
   await browser.close();
   if(server)await new Promise(resolve=>server.close(resolve));
 })().catch(e=>{console.error(e);process.exit(1)});

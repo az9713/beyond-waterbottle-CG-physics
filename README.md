@@ -1,6 +1,6 @@
 # Beyond the water bottle: center-of-gravity physics
 
-A six-tab, interactive physics explainer that starts with a draining cylindrical water bottle and develops a general theory of changing weighted averages.
+An eight-tab, interactive physics explainer that starts with a draining cylindrical water bottle and develops a general theory of changing weighted averages.
 
 **GitHub Pages target:** https://az9713.github.io/beyond-waterbottle-CG-physics/
 
@@ -14,6 +14,9 @@ The URL becomes live after the repository is pushed and GitHub Pages finishes bu
 4. **Shared framework** — thermal mixing, capacitor charge sharing, inelastic momentum capture, and solute mixing; exact dimensionless collapse under matching input protocols.
 5. **Unknown unknowns** — singular limits, reference frames, system boundaries, stability, inverse identification, noisy measurements, and the limits of analogies.
 6. **Next explorations** — experiments, geometry computation, system identification, and an AI-agent scientific reasoning benchmark; primary references with attribution scope.
+
+7. **New questions** — all six follow-on questions, with special treatment of stability objectives, inverse geometry, and system boundaries; explains why these three deserve deeper study.
+8. **Knock-over lab** — distinct tilt, force, energy, impulse, and angular-speed criteria; exact rigid derivations; 3D settled-water geometry; a free-surface energy correction and variational arguments; an interactive tilt lab and two HyperFrames films. Direct link: [Stability lab](https://az9713.github.io/beyond-waterbottle-CG-physics/#stability).
 
 ## Use it
 
@@ -33,7 +36,7 @@ Playback speed ranges from 0.5× to 8×; the default 2× animates a full emptyin
 
 Both simulators define the two ratios beside their sliders and provide a detailed guide below: empty-bottle mass divided by the full-capacity water load, and empty-bottle CG height divided by internal height. A fixed-fill numerical table distinguishes surface height from balance-point height and explains why changing either mass property leaves the water surface fixed. Direct links: `#ideal-slider-guide` and `#real-slider-guide`.
 
-All six chapters include 26 visual aids beside extended explanations: paired reflection elements and distinct symmetry planes; exact component centroids; removed layers; disappearing equivalent ballast; equal complementary-fill moments; timing and mass-ratio curves; shape and tilt; retained high water; capillary scales; slosh; fluid boundary conditions; density sensitivity; four dimensional analogues; system boundaries; singular limits; reference frames; stability; and an experimental workflow. An additional symmetry slider moves the water plane while showing all three centroids. Captions distinguish computed curves from schematics, state units and assumptions, and identify magnified or nonphysical display offsets. These figures are code-native SVG, not generated illustrative images.
+The original six chapters include 26 visual aids beside extended explanations: paired reflection elements and distinct symmetry planes; exact component centroids; removed layers; disappearing equivalent ballast; equal complementary-fill moments; timing and mass-ratio curves; shape and tilt; retained high water; capillary scales; slosh; fluid boundary conditions; density sensitivity; four dimensional analogues; system boundaries; singular limits; reference frames; stability; and an experimental workflow. An additional symmetry slider moves the water plane while showing all three centroids. Captions distinguish computed curves from schematics, state units and assumptions, and identify magnified or nonphysical display offsets. These figures are code-native SVG, not generated illustrative images.
 
 ## The central result
 
@@ -57,6 +60,7 @@ python build_content.py
 python scripts/build_standalone.py
 python visual_aids.py
 node tests/physics.test.cjs
+node tests/stability.test.cjs
 ```
 
 Numerical checks cover endpoints, exact turning points, boundary cases, inversion of volume to depth, the derivative identity over different geometries, independent numerical quadrature, and dimensional collapse. `tests/browser.test.cjs` starts its own local server and performs browser interaction, math rendering, offline-resource, mobile layout, CSV, deep-link, and print checks when Playwright is installed:
@@ -97,7 +101,7 @@ This repository contains the educational artifact, not the private conversation 
 
 | Path | Purpose |
 |---|---|
-| `index.html` | Ready-to-read six-tab app |
+| `index.html` | Ready-to-read eight-tab app |
 | `standalone.html` | Self-contained offline edition |
 | `build_content.py` | Editable chapter content and static HTML generator |
 | `visual_aids.py` | Deterministic scientific SVGs, captions, and geometry checks |
@@ -109,3 +113,21 @@ This repository contains the educational artifact, not the private conversation 
 | `vendor/katex/` | Locally bundled KaTeX 0.16.11, fonts, MIT license |
 
 Original project code and educational text are provided under the MIT license. Third-party KaTeX retains its own included MIT license. Linked external references retain their respective licenses.
+
+
+## Stability extension: different questions have different winners
+
+For H = 30 cm, R ≈ 2.913 cm, midpoint-balanced 100 g shell, and 800 g full water load:
+
+| Imposed test | Best fill in the stated model |
+| --- | --- |
+| Critical tilt, immobilized water | 25.0000% |
+| Critical tilt, freely settling sealed water | 25.6678% (20.7244°) |
+| Gravitational energy barrier | Full; proved for both rigid and relaxed midpoint-shell models |
+| Fixed-height push threshold | Full; check sliding versus tipping |
+| Ideal impulse at fixed height and fixed rim | Full; requires rigid-payload/contact assumptions |
+| Required initial angular speed | About 30.7%; depends on the specified shell inertia |
+
+`stability-physics.js` contains the pure models. Settled-water states use an exact analytic formula while the interface avoids both end caps; clipped states use circular-segment areas with axial quadrature and a volume-conserving surface solve. `tests/stability.test.cjs` cross-checks these with an independent transverse integration. `stability-render.js` is shared by the interactive site and the two film compositions. `stability_content.py` preserves the complete new questions and derivations.
+
+The impulse model is a controlled rigid-payload reference. The site does not claim to solve free-liquid impacts, sloshing, spilling, rounded-base contact, or contact loss. Captioned films and reproduction instructions: [animations/tipping/README.md](animations/tipping/README.md). The standalone HTML embeds videos, posters, captions, and scripts for offline use.

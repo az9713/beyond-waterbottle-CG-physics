@@ -1,0 +1,112 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=1280,height=720"><title>A free surface changes the tipping threshold</title><script src="gsap.min.js"></script><style>
+@font-face{font-family:ScienceSans;src:url('ScienceSans.woff2') format('woff2')}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#0b1220;color:#e2e8f0;font-family:ScienceSans,sans-serif}#root{position:relative;width:100%;height:100%;overflow:hidden;padding:30px 45px}.clip{position:absolute;inset:0;padding:30px 45px}.film-title{position:absolute;top:20px;left:45px;width:1190px;height:55px}p{position:absolute;top:77px;left:45px;right:45px;font-size:21px;line-height:1.4;margin:12px 0 0}#stage{position:absolute;top:125px;left:45px;right:45px;height:500px;display:flex;justify-content:center;gap:25px;align-items:center}#stage svg{height:100%;max-width:100%;flex:1;min-width:0}#stage text{font-family:ScienceSans,sans-serif}footer{position:absolute;left:45px;right:45px;bottom:22px;font-size:18px;color:#a8bbcf;border-top:1px solid #28445b;padding-top:12px}
+</style></head><body><div id="root" data-composition-id="stability-tilt" data-start="0" data-width="1280" data-height="720" data-duration="10" data-fps="24"><svg class="film-title" viewBox="0 0 1190 55"><text x="0" y="38" fill="#38bdf8" font-size="34" font-family="ScienceSans,sans-serif">A free surface changes the tipping threshold</text></svg><p>Same 25% fill. Different constraints on the water.</p><div id="stage"></div><footer>Computed 3D water volume and centroids. Prescribed tilt, not a falling or sloshing simulation.</footer></div><script>/* Dimensionless H=1, full-water mass=1; fixed circular base radius q=R/H. */
+(function(root){
+'use strict';
+const cg=(f,r=.125,b=.5)=>(r*b+f*f/2)/(r+f);
+function rigid(f,r=.125,q=0.09711541605262927,b=.5){
+  const y=cg(f,r,b),mass=r+f,d=Math.hypot(q,y),lift=q*q/(d+y);
+  const energy=mass*lift;
+  // Thin uniform cylindrical sidewall, massless end caps; immobilized solid-cylinder water.
+  const inertia=r*(1.5*q*q+1/3)+f*(1.25*q*q+f*f/3);
+  return {y,mass,angle:Math.atan2(q,y),energy,inertia,angularImpulse:Math.sqrt(2*inertia*energy),omega:Math.sqrt(2*energy/inertia),acceleration:q/y};
+}
+function energyOptimum(r,q,b=.5){const a=b+q*q/(2*r);return Math.min(1,a+Math.hypot(a,q));}
+// Exact circular-segment formula, midpoint quadrature in axial s, numerical surface elevation.
+function relaxed(f,theta,r=.125,q=0.09711541605262927,n=240){
+  const si=Math.sin(theta),co=Math.cos(theta),area=Math.PI*q*q;
+  if(f<=0)return {x:-q*co+.5*si,z:q*si+.5*co,energy:r*(q*si+.5*co),level:0,volume:0,waterX:null,waterZ:null};
+  if(f>=1)return {x:-q*co+.5*si,z:q*si+.5*co,energy:(r+1)*(q*si+.5*co),level:2*q*si+co,volume:1,waterX:-q*co+.5*si,waterZ:q*si+.5*co};
+  if(Math.abs(si)<1e-8){const y=cg(f,r);return{x:-q,z:y,energy:(r+f)*y,level:f,volume:f,waterX:-q,waterZ:f/2};}
+  if(q*Math.abs(Math.tan(theta))<=Math.min(f,1-f)){
+    const jx=q*q*Math.tan(theta)/4,js=f*f/2+q*q*Math.tan(theta)**2/8;
+    const wx=(jx-q*f)*co+js*si,wz=(q*f-jx)*si+js*co;
+    const sx=-q*co+.5*si,sz=q*si+.5*co;
+    return{x:(r*sx+wx)/(r+f),z:(r*sz+wz)/(r+f),energy:r*sz+wz,level:q*si+f*co,volume:f,waterX:wx/f,waterZ:wz/f};
+  }
+  function integrate(level,withMoments=false){
+    let v=0,jx=0,js=0;
+    for(let k=0;k<n;k++){
+      const s=(k+.5)/n,c=q+(s*co-level)/si;
+      let a,mx;
+      if(c<=-q){a=area;mx=0;}else if(c>=q){a=0;mx=0;}else{const h=Math.sqrt(q*q-c*c);a=q*q*Math.acos(c/q)-c*h;mx=2*h*h*h/3;}
+      v+=a;
+      if(withMoments){jx+=mx;js+=s*a;}
+    }
+    return {v:v/n/area,jx:jx/n/area,js:js/n/area};
+  }
+  let low=0,high=2*q*si+co;
+  for(let j=0;j<42;j++){const mid=(low+high)/2;if(integrate(mid).v<f)low=mid;else high=mid;}
+  const level=(low+high)/2,a=integrate(level,true),wx=(a.jx-q*a.v)*co+a.js*si,wz=(q*a.v-a.jx)*si+a.js*co;
+  const sx=-q*co+.5*si,sz=q*si+.5*co;
+  return {x:(r*sx+wx)/(r+f),z:(r*sz+wz)/(r+f),energy:r*sz+wz,level,volume:a.v,waterX:wx/f,waterZ:wz/f};
+}
+function relaxedCritical(f,r=.125,q=0.09711541605262927,n=240){
+  let low=0,high=Math.PI/2;
+  for(let j=0;j<30;j++){const mid=(low+high)/2;if(relaxed(f,mid,r,q,n).x>0)high=mid;else low=mid;}
+  const angle=(low+high)/2,state=relaxed(f,angle,r,q,n);
+  return {angle,energy:state.energy-(r+f)*cg(f,r),state};
+}
+function clipCentral(f,theta,level,q,mode='relaxed'){
+  let poly=[[-q,0],[q,0],[q,mode==='rigid'?f:1],[-q,mode==='rigid'?f:1]];
+  if(mode==='rigid')return poly;
+  const height=p=>(q-p[0])*Math.sin(theta)+p[1]*Math.cos(theta);
+  const out=[];
+  for(let i=0;i<poly.length;i++){
+    const a=poly[i],b=poly[(i+1)%poly.length],ha=height(a)-level,hb=height(b)-level;
+    if(ha<=0)out.push(a);
+    if((ha<=0)!==(hb<=0)){const t=ha/(ha-hb);out.push([a[0]+t*(b[0]-a[0]),a[1]+t*(b[1]-a[1])]);}
+  }
+  return out;
+}
+const api={cg,rigid,energyOptimum,relaxed,relaxedCritical,clipCentral};
+if(typeof module!=='undefined'&&module.exports)module.exports=api;
+root.StabilityPhysics=api;
+})(typeof window==='undefined'?globalThis:window);
+
+/* SVG views shared by the interactive lab and deterministic HyperFrames films. */
+(function(root){
+'use strict';
+const S=typeof module!=='undefined'&&module.exports?require('./stability-physics.js'):root.StabilityPhysics;
+const colors={cyan:'#38bdf8',gold:'#fbbf24',pink:'#f472b6',white:'#e2e8f0',muted:'#a8bbcf',grid:'#28445b',green:'#34d399'};
+const line=(x,y,a,b,c,d='')=>`<line x1="${x}" y1="${y}" x2="${a}" y2="${b}" stroke="${c}" stroke-width="2" stroke-dasharray="${d}"/>`;
+const text=(x,y,t,c=colors.muted,size=14)=>`<text x="${x}" y="${y}" fill="${c}" font-size="${size}" font-family="system-ui,sans-serif">${t}</text>`;
+function panel(f,theta,mode='rigid',r=.125,q=0.09711541605262927){
+  const w=430,h=410,scale=220,px=150,py=337;
+  const si=Math.sin(theta),co=Math.cos(theta),T=(x,s)=>[px+scale*((x-q)*co+s*si),py-scale*((q-x)*si+s*co)];
+  const rigid=S.rigid(f,r,q),a=mode==='rigid'?{x:-q*co+rigid.y*si,z:q*si+rigid.y*co,level:f}:S.relaxed(f,theta,r,q);
+  const polygon=pts=>pts.map(p=>T(p[0],p[1]).join(',')).join(' ');
+  const vessel=polygon([[-q,0],[q,0],[q,1],[-q,1]]);
+  const water=S.clipCentral(f,theta,a.level,q,mode);
+  const cx=px+scale*a.x,cy=py-scale*a.z;
+  const over=a.x>1e-5,neutral=Math.abs(a.x)<.002;
+  let out=`<svg class="science-svg stability-view" viewBox="0 0 ${w} ${h}" role="img" aria-label="${mode==='rigid'?'Immobilized payload':'Settled liquid'} at ${(theta*180/Math.PI).toFixed(1)} degrees"><title>Computed ${mode} geometry, ${Math.round(f*100)}% full</title>`;
+  out+=line(25,py+1,405,py+1,colors.muted)+line(px,35,px,py+10,colors.muted,'4 6');
+  if(f>0)out+=`<polygon points="${polygon(water)}" fill="#124966" stroke="${colors.cyan}" stroke-width="2"/>`;
+  out+=`<polygon points="${vessel}" fill="none" stroke="${colors.white}" stroke-width="2.5"/>`;
+  out+=`<circle cx="${px}" cy="${py}" r="5" fill="${colors.pink}"/><circle cx="${cx}" cy="${cy}" r="7" fill="${colors.gold}"/>`;
+  out+=line(cx,cy+10,cx,cy+48,colors.gold)+`<path d="M${cx-5},${cy+40}l5,8l5,-8" fill="none" stroke="${colors.gold}" stroke-width="2"/>`;
+  out+=line(px,py-12,cx,py-12,over?colors.pink:colors.green);
+  out+=text(20,24,mode==='rigid'?'Immobilized water reference':'Freely settling water',colors.white,18);
+  out+=text(20,48,`${Math.round(f*100)}% full · ${(theta*180/Math.PI).toFixed(1)}° prescribed tilt`);
+  out+=text(20,369,neutral?'CG nearly above pivot':over?'Gravity drives further tipping':'Gravity restores upright',over?colors.pink:colors.green,16);
+  out+=text(20,394,'Gold = combined CG / weight; pink = rim pivot',colors.muted,12);
+  return out+'</svg>';
+}
+function comparison(f,theta,r=.125,q=0.09711541605262927){return panel(f,theta,'rigid',r,q)+panel(f,theta,'relaxed',r,q);}
+let sweepKey='',sweepMax;
+function sweep(f,r=.125,q=0.09711541605262927){
+  const a=S.rigid(f,r,q),H=.30,mfull=1000*Math.PI*q*q*H**3,g=9.81,p=.25;
+  const key=[r,q].join(',');
+  if(key!==sweepKey){sweepMax=[0,0,0,0];for(let i=0;i<=1000;i++){const v=S.rigid(i/1000,r,q);[v.angle*180/Math.PI,v.energy*mfull*g*H,v.angularImpulse*mfull*H*Math.sqrt(g*H)/p,v.omega*Math.sqrt(g/H)].forEach((n,j)=>sweepMax[j]=Math.max(sweepMax[j],n));}sweepKey=key;}
+  const vals=[['Tilt angle',a.angle*180/Math.PI,sweepMax[0],'degrees',colors.cyan],['Lifting energy',a.energy*mfull*g*H,sweepMax[1],'joules',colors.gold],['Impulse at 25 cm',a.angularImpulse*mfull*H*Math.sqrt(g*H)/p,sweepMax[2],'N s',colors.pink],['Initial angular speed',a.omega*Math.sqrt(g/H),sweepMax[3],'rad/s',colors.green]];
+  let out='<svg class="science-svg" viewBox="0 0 900 440" role="img" aria-label="Different resistance measures as fill changes"><title>Calculated rigid-payload thresholds</title>'+text(20,35,`${(f*100).toFixed(0)}% full: different tests reward different fills`,colors.white,25);
+  vals.forEach((v,i)=>{const y=90+i*83;out+=text(20,y,v[0],colors.white,19)+`<rect x="270" y="${y-20}" width="420" height="26" rx="4" fill="#14283b"/><rect x="270" y="${y-20}" width="${420*Math.min(1,v[1]/v[2])}" height="26" rx="4" fill="${v[4]}"/>`+text(710,y,`${v[1].toFixed(3)} ${v[3]}`,v[4],18);});
+  out+=text(20,430,'Each bar / its own maximum over fill. Computed rigid model; free-water impact dynamics are not solved.',colors.muted,14);
+  return out+'</svg>';
+}
+const api={panel,comparison,sweep};if(typeof module!=='undefined'&&module.exports)module.exports=api;root.StabilityRender=api;
+})(typeof window==='undefined'?globalThis:window);
+
+const state={t:0};function draw(){const t=state.t;const deg=t<1?0:t<3?20.98*(t-1)/2:t<5?20.98:t<7?20.98+9.02*(t-5)/2:t<8?30:Math.max(0,30*(10-t)/2);document.getElementById('stage').innerHTML=StabilityRender.comparison(.25,deg*Math.PI/180);}draw();const timeline=gsap.timeline({paused:true});timeline.to(state,{t:10,duration:10,ease:'none',onUpdate:draw},0);window.__timelines=window.__timelines||{};window.__timelines['stability-tilt']=timeline;
+</script></body></html>
